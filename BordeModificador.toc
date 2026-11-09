@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Title: BordeModificador
 ## Notes: Resalta con un borde de color (personalizable) las habilidades bindeadas al modificador pulsado (Shift, Ctrl, Alt).
-## Author: Miguel
+## Author: el BrujoPirujo
 ## Version: 1.1.0
 ## SavedVariables: BordeModificadorDB
 
