@@ -11,7 +11,7 @@ The goal is quick visual feedback: one glance tells you which abilities you're a
 - Works with Shift, Ctrl and Alt, and with combinations of them (e.g. Ctrl+Shift).
 - Border color and thickness are customizable.
 - Optional "combat only" mode.
-- Interface in English or Spanish, depending on your game client language.
+- Interface in English or Spanish: follows your game client by default, or pick one in the options panel.
 
 ### Installation
 
@@ -24,6 +24,7 @@ Copy the `KeybindGlow` folder into the `Interface/AddOns/` folder of your game c
 - `/kg size N` — border thickness, 1 to 8 px
 - `/kg combat` — only show in combat
 - `/kg reset` — restore defaults
+- `/kg lang en|es|auto` — addon language
 
 ---
 
@@ -38,7 +39,7 @@ La idea es darte una referencia visual rápida: de un vistazo sabes qué habilid
 - Funciona con Shift, Ctrl y Alt, y con combinaciones entre ellos (p. ej. Ctrl+Shift).
 - Color y grosor del borde personalizables.
 - Modo opcional "solo en combate".
-- Interfaz en español o en inglés según el idioma del cliente.
+- Interfaz en español o en inglés: por defecto según el cliente, o elígelo en el panel de opciones.
 
 ### Instalación
 
@@ -51,3 +52,4 @@ Copia la carpeta `KeybindGlow` en la carpeta `Interface/AddOns/` de tu cliente, 
 - `/kg grosor N` — grosor del borde, de 1 a 8 px
 - `/kg combate` — mostrar solo en combate
 - `/kg reset` — restablecer valores por defecto
+- `/kg idioma en|es|auto` — idioma del addon

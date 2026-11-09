@@ -9,9 +9,12 @@ local ADDON_NAME = "KeybindGlow"
 local PREFIX = "|cff1a8cffKeybindGlow|r"
 
 ---------------------------------------------------------------------------
--- Localization (English default, Spanish for esES / esMX clients)
+-- Localization (English / Spanish). "auto" follows the game client locale;
+-- the user can force a language with the options panel or /kg lang.
 ---------------------------------------------------------------------------
-local L = {
+local LOCALES = {}
+
+LOCALES.en = {
     NO_PICKER    = "color picker not available; use /kg color <name> or /kg color #RRGGBB",
     SUBTITLE     = "Highlights the abilities bound to the modifier you are holding.",
     BORDER_COLOR = "Border color:",
@@ -26,6 +29,11 @@ local L = {
     UNKNOWN      = "unknown color. Try: %s or #RRGGBB",
     COMBAT_STATE = "combat only: %s",
     ON = "ON", OFF = "OFF",
+    LANGUAGE     = "Language / Idioma:",
+    LANG_AUTO    = "Auto",
+    LANG_SET     = "language: %s",
+    LANG_UNKNOWN = "unknown language. Use: en, es or auto",
+    LANG_NAMES   = { auto = "auto (game client)", en = "English", es = "Spanish" },
     HELP = {
         "commands:",
         "  /kg                 open the options panel",
@@ -36,6 +44,7 @@ local L = {
         "  /kg size N          border thickness 1-8 px",
         "  /kg combat          toggle combat only",
         "  /kg reset           reset to default blue",
+        "  /kg lang en|es|auto addon language",
         "  Buttons detected: %d",
     },
     COLORS = {
@@ -46,23 +55,27 @@ local L = {
     },
 }
 
-local locale = GetLocale()
-if locale == "esES" or locale == "esMX" then
-    L.NO_PICKER    = "el selector de color no esta disponible; usa /kg color <nombre> o /kg color #RRGGBB"
-    L.SUBTITLE     = "Resalta las habilidades bindeadas al modificador que mantienes pulsado."
-    L.BORDER_COLOR = "Color del borde:"
-    L.PICK_COLOR   = "Elegir color..."
-    L.QUICK_COLORS = "Colores rapidos:"
-    L.THICKNESS    = "Grosor del borde: %d px"
-    L.COMBAT_ONLY  = "Solo en combate"
-    L.PREVIEW      = "Vista previa (muestra el borde en todos los botones con modificador)"
-    L.RESET        = "Restablecer (azul)"
-    L.NO_PANEL     = "no se pudo abrir el panel; usa /kg ayuda"
-    L.COLOR_SET    = "color: %s"
-    L.UNKNOWN      = "color no reconocido. Prueba: %s o #RRGGBB"
-    L.COMBAT_STATE = "solo en combate: %s"
-    L.ON, L.OFF = "SI", "NO"
-    L.HELP = {
+LOCALES.es = {
+    NO_PICKER    = "el selector de color no esta disponible; usa /kg color <nombre> o /kg color #RRGGBB",
+    SUBTITLE     = "Resalta las habilidades bindeadas al modificador que mantienes pulsado.",
+    BORDER_COLOR = "Color del borde:",
+    PICK_COLOR   = "Elegir color...",
+    QUICK_COLORS = "Colores rapidos:",
+    THICKNESS    = "Grosor del borde: %d px",
+    COMBAT_ONLY  = "Solo en combate",
+    PREVIEW      = "Vista previa (muestra el borde en todos los botones con modificador)",
+    RESET        = "Restablecer (azul)",
+    NO_PANEL     = "no se pudo abrir el panel; usa /kg ayuda",
+    COLOR_SET    = "color: %s",
+    UNKNOWN      = "color no reconocido. Prueba: %s o #RRGGBB",
+    COMBAT_STATE = "solo en combate: %s",
+    ON = "SI", OFF = "NO",
+    LANGUAGE     = "Language / Idioma:",
+    LANG_AUTO    = "Auto",
+    LANG_SET     = "idioma: %s",
+    LANG_UNKNOWN = "idioma no reconocido. Usa: en, es o auto",
+    LANG_NAMES   = { auto = "automatico (cliente del juego)", en = "ingles", es = "espanol" },
+    HELP = {
         "comandos:",
         "  /kg                 abre el panel de opciones",
         "  /kg color           abre la rueda de color",
@@ -72,14 +85,28 @@ if locale == "esES" or locale == "esMX" then
         "  /kg grosor N        grosor 1-8 px",
         "  /kg combate         activar/desactivar solo en combate",
         "  /kg reset           volver al azul por defecto",
+        "  /kg idioma en|es|auto idioma del addon",
         "  Botones detectados: %d",
-    }
-    L.COLORS = {
+    },
+    COLORS = {
         blue = "azul", pink = "rosa", magenta = "fucsia", purple = "morado", red = "rojo",
         orange = "naranja", yellow = "amarillo", green = "verde", cyan = "cian", white = "blanco",
         crimson = "carmesi", coral = "coral", gold = "dorado", lime = "lima", teal = "turquesa",
         sky = "celeste", lavender = "lavanda", silver = "plata",
-    }
+    },
+}
+
+local function clientLanguage()
+    local locale = GetLocale()
+    if locale == "esES" or locale == "esMX" then return "es" end
+    return "en"
+end
+
+-- Active strings; reassigned by setLanguage() once saved variables load
+local L = LOCALES[clientLanguage()]
+
+local function resolveLanguage(choice)
+    return LOCALES[choice] and choice or clientLanguage()
 end
 
 local DEFAULTS = {
@@ -261,6 +288,13 @@ local function applyAll()
     if updatePanel then updatePanel() end
 end
 
+-- choice: "auto", "en" or "es"
+local function setLanguage(choice)
+    db.language = choice
+    L = LOCALES[resolveLanguage(choice)]
+    if updatePanel then updatePanel() end
+end
+
 local function setColor(r, g, b)
     db.r = math.max(0, math.min(1, r))
     db.g = math.max(0, math.min(1, g))
@@ -312,12 +346,27 @@ local function createPanel()
 
     local sub = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     sub:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
-    sub:SetText(L.SUBTITLE)
+
+    -- Language selector (radio-style checkboxes)
+    local lblLang = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    lblLang:SetPoint("TOPLEFT", sub, "BOTTOMLEFT", 0, -20)
+
+    local langChecks = {}
+    local prevLang = lblLang
+    for _, opt in ipairs({ { "auto" }, { "en", "English" }, { "es", "Español" } }) do
+        local key, fixedLabel = opt[1], opt[2]
+        local chk = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
+        chk:SetPoint("LEFT", prevLang, "RIGHT", prevLang == lblLang and 8 or 6, 0)
+        local lbl = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        lbl:SetPoint("LEFT", chk, "RIGHT", 2, 0)
+        chk:SetScript("OnClick", function() setLanguage(key) end)
+        langChecks[#langChecks + 1] = { key = key, check = chk, label = lbl, fixed = fixedLabel }
+        prevLang = lbl
+    end
 
     -- Current color swatch + button that opens the color picker
     local lblColor = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    lblColor:SetPoint("TOPLEFT", sub, "BOTTOMLEFT", 0, -24)
-    lblColor:SetText(L.BORDER_COLOR)
+    lblColor:SetPoint("TOPLEFT", lblLang, "BOTTOMLEFT", 0, -26)
 
     local sample = CreateFrame("Button", nil, panel)
     sample:SetSize(26, 26)
@@ -333,13 +382,11 @@ local function createPanel()
     local btnPicker = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     btnPicker:SetSize(150, 24)
     btnPicker:SetPoint("LEFT", sample, "RIGHT", 10, 0)
-    btnPicker:SetText(L.PICK_COLOR)
     btnPicker:SetScript("OnClick", openColorPicker)
 
     -- Quick colors
     local lblQuick = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     lblQuick:SetPoint("TOPLEFT", lblColor, "BOTTOMLEFT", 0, -26)
-    lblQuick:SetText(L.QUICK_COLORS)
 
     local previous, rowStart
     for i, name in ipairs(PRESET_ORDER) do
@@ -395,7 +442,6 @@ local function createPanel()
     chkCombat:SetPoint("TOPLEFT", lblThickness, "BOTTOMLEFT", -4, -16)
     local lblCombat = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     lblCombat:SetPoint("LEFT", chkCombat, "RIGHT", 4, 0)
-    lblCombat:SetText(L.COMBAT_ONLY)
     chkCombat:SetScript("OnClick", function(self)
         db.combatOnly = self:GetChecked() and true or false
         refresh()
@@ -406,7 +452,6 @@ local function createPanel()
     chkPreview:SetPoint("TOPLEFT", chkCombat, "BOTTOMLEFT", 0, -4)
     local lblPreview = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     lblPreview:SetPoint("LEFT", chkPreview, "RIGHT", 4, 0)
-    lblPreview:SetText(L.PREVIEW)
     chkPreview:SetScript("OnClick", function(self)
         preview = self:GetChecked() and true or false
         refresh()
@@ -421,13 +466,26 @@ local function createPanel()
     local btnReset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     btnReset:SetSize(150, 24)
     btnReset:SetPoint("TOPLEFT", chkPreview, "BOTTOMLEFT", 4, -16)
-    btnReset:SetText(L.RESET)
     btnReset:SetScript("OnClick", function()
         for k, v in pairs(DEFAULTS) do db[k] = v end
         applyAll()
     end)
 
     updatePanel = function()
+        -- Texts (re-applied so a language change takes effect immediately)
+        sub:SetText(L.SUBTITLE)
+        lblLang:SetText(L.LANGUAGE)
+        for _, lc in ipairs(langChecks) do
+            lc.label:SetText(lc.fixed or L.LANG_AUTO)
+            lc.check:SetChecked(db.language == lc.key)
+        end
+        lblColor:SetText(L.BORDER_COLOR)
+        btnPicker:SetText(L.PICK_COLOR)
+        lblQuick:SetText(L.QUICK_COLORS)
+        lblCombat:SetText(L.COMBAT_ONLY)
+        lblPreview:SetText(L.PREVIEW)
+        btnReset:SetText(L.RESET)
+
         swatch:SetColorTexture(db.r, db.g, db.b, 1)
         lblThickness:SetText(L.THICKNESS:format(db.thickness))
         chkCombat:SetChecked(db.combatOnly)
@@ -466,6 +524,8 @@ f:SetScript("OnEvent", function(_, event, arg1)
         for k, v in pairs(DEFAULTS) do
             if db[k] == nil then db[k] = v end
         end
+        if db.language ~= "auto" and not LOCALES[db.language] then db.language = "auto" end
+        L = LOCALES[resolveLanguage(db.language)]
         createPanel()
         return
     end
@@ -521,6 +581,15 @@ SlashCmdList.KEYBINDGLOW = function(msg)
         db.combatOnly = not db.combatOnly
         print(PREFIX .. " " .. L.COMBAT_STATE:format(db.combatOnly and L.ON or L.OFF))
         applyAll()
+    elseif cmd == "lang" or cmd == "language" or cmd == "idioma" then
+        local choice = ({ en = "en", english = "en", ingles = "en", es = "es", spanish = "es",
+            espanol = "es", ["español"] = "es", auto = "auto" })[a or ""]
+        if choice then
+            setLanguage(choice)
+            print(PREFIX .. " " .. L.LANG_SET:format(L.LANG_NAMES[choice]))
+        else
+            print(PREFIX .. " " .. L.LANG_UNKNOWN)
+        end
     elseif cmd == "reset" then
         for k, v in pairs(DEFAULTS) do db[k] = v end
         applyAll()
