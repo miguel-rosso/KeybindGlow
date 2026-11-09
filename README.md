@@ -2,7 +2,7 @@
 
 **English** · [Español](#español)
 
-A super simple addon that highlights the abilities bound to the modifier you're holding.
+A simple addon that highlights the abilities bound to the modifier you're holding.
 
 Hold **Shift**, **Ctrl** or **Alt** and KeybindGlow instantly outlines every action button bound to a key combo that uses that modifier. Hold Shift and your Shift+1, Shift+Q, Shift+F… abilities light up with a colored border. Release it and they go back to normal.
 
@@ -29,7 +29,7 @@ Copy the `KeybindGlow` folder into the `Interface/AddOns/` folder of your game c
 
 ## Español
 
-Addon súper simple que resalta las habilidades bindeadas al modificador que mantienes pulsado.
+Addon simple que resalta las habilidades bindeadas al modificador que mantienes pulsado.
 
 Mantén pulsado **Shift**, **Ctrl** o **Alt** y KeybindGlow remarca al momento todos los botones de acción que tengas bindeados con una combinación que use ese modificador. Pulsas Shift y se iluminan con un borde de color tus habilidades en Shift+1, Shift+Q, Shift+F… Al soltarlo vuelven a la normalidad.
 
