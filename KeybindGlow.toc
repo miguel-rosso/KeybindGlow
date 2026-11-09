@@ -3,7 +3,7 @@
 ## Notes: Highlights the abilities bound to the modifier you are holding (Shift, Ctrl, Alt) with a customizable colored border.
 ## Notes-esES: Resalta con un borde de color (personalizable) las habilidades bindeadas al modificador pulsado (Shift, Ctrl, Alt).
 ## Notes-esMX: Resalta con un borde de color (personalizable) las habilidades bindeadas al modificador pulsado (Shift, Ctrl, Alt).
-## Author: el BrujoPirujo
+## Author: Rivotx
 ## Version: 1.0.0
 ## SavedVariables: KeybindGlowDB
 
