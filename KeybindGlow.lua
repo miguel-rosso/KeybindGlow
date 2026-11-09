@@ -41,6 +41,8 @@ local L = {
     COLORS = {
         blue = "blue", pink = "pink", magenta = "magenta", purple = "purple", red = "red",
         orange = "orange", yellow = "yellow", green = "green", cyan = "cyan", white = "white",
+        crimson = "crimson", coral = "coral", gold = "gold", lime = "lime", teal = "teal",
+        sky = "sky", lavender = "lavender", silver = "silver",
     },
 }
 
@@ -75,6 +77,8 @@ if locale == "esES" or locale == "esMX" then
     L.COLORS = {
         blue = "azul", pink = "rosa", magenta = "fucsia", purple = "morado", red = "rojo",
         orange = "naranja", yellow = "amarillo", green = "verde", cyan = "cian", white = "blanco",
+        crimson = "carmesi", coral = "coral", gold = "dorado", lime = "lima", teal = "turquesa",
+        sky = "celeste", lavender = "lavanda", silver = "plata",
     }
 end
 
@@ -96,13 +100,27 @@ local PRESETS = {
     green   = { 0.20, 1.00, 0.30 },
     cyan    = { 0.00, 0.90, 1.00 },
     white   = { 1.00, 1.00, 1.00 },
+    crimson  = { 0.75, 0.05, 0.20 },
+    coral    = { 1.00, 0.50, 0.40 },
+    gold     = { 1.00, 0.75, 0.00 },
+    lime     = { 0.70, 1.00, 0.00 },
+    teal     = { 0.00, 0.70, 0.60 },
+    sky      = { 0.50, 0.80, 1.00 },
+    lavender = { 0.75, 0.65, 1.00 },
+    silver   = { 0.70, 0.70, 0.75 },
 }
-local PRESET_ORDER = { "blue", "pink", "magenta", "purple", "red", "orange", "yellow", "green", "cyan", "white" }
+local PRESET_ORDER = {
+    "blue", "sky", "cyan", "teal", "green", "lime", "yellow", "gold", "orange",
+    "coral", "red", "crimson", "pink", "magenta", "purple", "lavender", "silver", "white",
+}
+local SWATCHES_PER_ROW = 9
 
 -- Spanish color names are always accepted as aliases
 local COLOR_ALIASES = {
     azul = "blue", rosa = "pink", fucsia = "magenta", morado = "purple", rojo = "red",
     naranja = "orange", amarillo = "yellow", verde = "green", cian = "cyan", blanco = "white",
+    carmesi = "crimson", ["carmesí"] = "crimson", dorado = "gold", oro = "gold", lima = "lime",
+    turquesa = "teal", celeste = "sky", lavanda = "lavender", plata = "silver", gris = "silver",
 }
 
 local function localizedColorList()
@@ -323,13 +341,17 @@ local function createPanel()
     lblQuick:SetPoint("TOPLEFT", lblColor, "BOTTOMLEFT", 0, -26)
     lblQuick:SetText(L.QUICK_COLORS)
 
-    local previous
+    local previous, rowStart
     for i, name in ipairs(PRESET_ORDER) do
         local c = PRESETS[name]
         local p = CreateFrame("Button", nil, panel)
         p:SetSize(22, 22)
         if i == 1 then
             p:SetPoint("TOPLEFT", lblQuick, "BOTTOMLEFT", 0, -8)
+            rowStart = p
+        elseif (i - 1) % SWATCHES_PER_ROW == 0 then
+            p:SetPoint("TOPLEFT", rowStart, "BOTTOMLEFT", 0, -6)
+            rowStart = p
         else
             p:SetPoint("LEFT", previous, "RIGHT", 6, 0)
         end
@@ -353,7 +375,8 @@ local function createPanel()
 
     -- Thickness
     local lblThickness = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    lblThickness:SetPoint("TOPLEFT", lblQuick, "BOTTOMLEFT", 0, -50)
+    local swatchRows = math.ceil(#PRESET_ORDER / SWATCHES_PER_ROW)
+    lblThickness:SetPoint("TOPLEFT", lblQuick, "BOTTOMLEFT", 0, -22 - swatchRows * 28)
 
     local minus = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     minus:SetSize(28, 22)
